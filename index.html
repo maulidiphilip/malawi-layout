@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Malawi Districts Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    svg {
+      border: 1px solid #ddd;
+      background: #f9f9f9;
+    }
+    .node circle {
+      fill: #3498db;
+      stroke: #fff;
+      stroke-width: 2px;
+    }
+    .node text {
+      font-size: 10px;
+      pointer-events: none;
+      text-anchor: middle;
+    }
+    .link {
+      stroke: #999;
+      stroke-opacity: 0.6;
+      stroke-width: 1.5px;
+    }
+    .tooltip {
+      position: absolute;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malawi Districts Connectivity</h1>
+  <svg width="800" height="800"></svg>
+  <div class="tooltip"></div>
+
+  <script>
+    // Optimized node positions
+    const optimizedNodes = [
+      {"id":"Blantyre","x":0.9285441740725132,"y":0.3520035368384891},
+      {"id":"Chikwawa","x":0.9583653492736899,"y":0.38835393500196974},
+      {"id":"Chiradzulu","x":0.8864630776085801,"y":0.30345737985094856},
+      {"id":"Chitipa","x":0.45685947099082913,"y":0},
+      {"id":"Dedza","x":0.6655498344349324,"y":0.1090275681824307},
+      {"id":"Dowa","x":0.6104233686291042,"y":0.08508223698899069},
+      {"id":"Karonga","x":0.4765149313506959,"y":0.011364267002821678},
+      {"id":"Kasungu","x":0.5827508139373999,"y":0.0614560524841174},
+      {"id":"Lilongwe","x":0.626657543546614,"y":0.08968117928017762},
+      {"id":"Machinga","x":0.7993666451351756,"y":0.23052986482485424},
+      {"id":"Mangochi","x":0.6796785455436795,"y":0.15442919909476083},
+      {"id":"Mchinji","x":0.632612853312409,"y":0.06385512587149705},
+      {"id":"Mulanje","x":0.9220886228012649,"y":0.30704099434369875},
+      {"id":"Mwanza","x":0.9818599114227182,"y":0.41403786065421017},
+      {"id":"Mzimba","x":0.5429816781706205,"y":0.053694229781475485},
+      {"id":"Neno","x":1,"y":0.4331299936010312},
+      {"id":"Nkhata Bay","x":0.5656137600991189,"y":0.0898369146542181},
+      {"id":"Nkhotakota","x":0.6042747572721644,"y":0.1212828468402707},
+      {"id":"Nsanje","x":0.9666507255517138,"y":0.39580672164883923},
+      {"id":"Ntcheu","x":0.7094467950945035,"y":0.1466550511688875},
+      {"id":"Ntchisi","x":0.5965928968322806,"y":0.10520903676225878},
+      {"id":"Phalombe","x":0.9091886652173173,"y":0.30229718540865},
+      {"id":"Rumphi","x":0.5058968216230199,"y":0.029350075825711204},
+      {"id":"Salima","x":0.6257061851148777,"y":0.12292997435496247},
+      {"id":"Thyolo","x":0.9329026318711299,"y":0.3299423480609822},
+      {"id":"Zomba","x":0.8298339837877962,"y":0.25548567334646743},
+      {"id":"Balaka","x":0.7376289602806892,"y":0.1823753931292302},
+      {"id":"Likoma","x":0,"y":1}
+    ];
+
+    // District connections
+    const links = [
+      ["Blantyre", "Chikwawa"], ["Blantyre", "Chiradzulu"], ["Blantyre", "Thyolo"],
+      ["Chikwawa", "Nsanje"], ["Chikwawa", "Mwanza"], ["Chiradzulu", "Zomba"],
+      ["Chiradzulu", "Phalombe"], ["Chitipa", "Karonga"], ["Dedza", "Lilongwe"],
+      ["Dedza", "Ntcheu"], ["Dowa", "Lilongwe"], ["Dowa", "Ntchisi"],
+      ["Karonga", "Rumphi"], ["Kasungu", "Lilongwe"], ["Kasungu", "Mzimba"],
+      ["Lilongwe", "Mchinji"], ["Lilongwe", "Salima"], ["Machinga", "Zomba"],
+      ["Machinga", "Balaka"], ["Mangochi", "Balaka"], ["Mangochi", "Salima"],
+      ["Mulanje", "Phalombe"], ["Mulanje", "Thyolo"], ["Mwanza", "Neno"],
+      ["Mzimba", "Nkhata Bay"], ["Mzimba", "Rumphi"], ["Nkhata Bay", "Nkhotakota"],
+      ["Nkhotakota", "Salima"], ["Nsanje", "Chikwawa"], ["Ntcheu", "Balaka"],
+      ["Ntchisi", "Nkhotakota"], ["Phalombe", "Mulanje"], ["Salima", "Nkhotakota"],
+      ["Zomba", "Machinga"]
+    ].map(([source, target]) => ({ 
+      source: optimizedNodes.find(n => n.id === source),
+      target: optimizedNodes.find(n => n.id === target)
+    }));
+
+    // Set up visualization
+    const svg = d3.select("svg");
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+    const tooltip = d3.select(".tooltip");
+
+    // Create scales with padding
+    const padding = 50;
+    const xScale = d3.scaleLinear()
+      .domain([0, 1])
+      .range([padding, width - padding]);
+    
+    const yScale = d3.scaleLinear()
+      .domain([0, 1])
+      .range([padding, height - padding]);
+
+    // Draw links
+    const link = svg.append("g")
+      .selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("class", "link")
+      .attr("stroke-width", 1.5);
+
+    // Draw nodes
+    const node = svg.append("g")
+      .selectAll("g")
+      .data(optimizedNodes)
+      .join("g")
+      .attr("transform", d => `translate(${xScale(d.x)},${yScale(d.y)})`)
+      .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+
+    node.append("circle")
+      .attr("r", 10)
+      .attr("fill", "#3498db")
+      .on("mouseover", showTooltip)
+      .on("mouseout", hideTooltip);
+
+    node.append("text")
+      .text(d => d.id)
+      .attr("dy", 15)
+      .attr("font-size", "10px");
+
+    // Update positions on tick
+    function updatePositions() {
+      link
+        .attr("x1", d => xScale(d.source.x))
+        .attr("y1", d => yScale(d.source.y))
+        .attr("x2", d => xScale(d.target.x))
+        .attr("y2", d => yScale(d.target.y));
+      
+      node.attr("transform", d => `translate(${xScale(d.x)},${yScale(d.y)})`);
+    }
+
+    // Tooltip functions
+    function showTooltip(event, d) {
+      tooltip.style("opacity", 1)
+        .html(d.id)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 20) + "px");
+    }
+
+    function hideTooltip() {
+      tooltip.style("opacity", 0);
+    }
+
+    // Drag functions
+    function dragstarted(event, d) {
+      d3.select(this).raise().attr("stroke", "black");
+    }
+
+    function dragged(event, d) {
+      d.x = xScale.invert(event.x);
+      d.y = yScale.invert(event.y);
+      updatePositions();
+    }
+
+    function dragended(event, d) {
+      d3.select(this).attr("stroke", null);
+    }
+
+    // Initial render
+    updatePositions();
+  </script>
+</body>
+</html>
